@@ -24,7 +24,7 @@ void copyField(Field<Cplx> * input, Field<Cplx> *output = NULL)
 {
   Site x(input->lattice());
 
-  if (input != NULL)
+  if (output != NULL)
     {
       for(x.first(); x.test(); x.next())
     {
