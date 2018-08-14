@@ -245,8 +245,8 @@ int main(int argc, char **argv)
 	Field<Cplx> norm_vR2FT;
 
     // for the cross spectra P(k, z1, z2)
-    Field<Cplx> scalarFTcross[sim.out_pk];
-    for (int i = 0; i<sim.out_pk; ++i){
+    Field<Cplx> scalarFTcross[sim.num_pk];
+    for (int i = 0; i<sim.num_pk; ++i){
         scalarFTcross[i].initialize(latFT, 1);
     }
 
@@ -807,7 +807,7 @@ int main(int argc, char **argv)
 			COUT << COLORTEXT_CYAN << " writing power spectra" << COLORTEXT_RESET << " at z = " << ((1./a) - 1.) <<  " (cycle " << cycle << "), tau/boxsize = " << tau << endl;
 
 #ifdef CHECK_B			
-			writeSpectra(sim, cosmo, fourpiG, a, pkcount, &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij, &vi,&viFT, &plan_vi, &vR,&vRFT, &plan_vR, &th, &thFT, &plan_th, &sigma2, &sigma2FT, &plan_sigma2, &Bi_check, &BiFT_check, &plan_Bi_check, &vi_check, &viFT_check, &plan_vi_check );
+			writeSpectra(sim, cosmo, fourpiG, a, pkcount, &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij, &vi,&viFT, &plan_vi, &vR,&vRFT, &plan_vR, &th, &thFT, &plan_th, &sigma2, &sigma2FT, &plan_sigma2, &Bi_check, &BiFT_check, &plan_Bi_check, &vi_check, &viFT_check, &plan_vi_check);
 #else
 			writeSpectra(sim, cosmo, fourpiG, a, pkcount, &pcls_cdm, &pcls_b, pcls_ncdm, &phi, &chi, &Bi, &source, &Sij, &scalarFT, &BiFT, &SijFT, &plan_phi, &plan_chi, &plan_Bi, &plan_source, &plan_Sij, &vi,&viFT, &plan_vi, &vR, &vRFT, &plan_vR, &th,&thFT, &plan_th, &sigma2, &sigma2FT, &plan_sigma2,
             scalarFTcross);
