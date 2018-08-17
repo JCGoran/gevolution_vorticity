@@ -244,11 +244,18 @@ int main(int argc, char **argv)
 	Field<Cplx> norm_wFT;
 	Field<Cplx> norm_vR2FT;
 
+/*********************************************************/
     // for the cross spectra P(k, z1, z2)
+
+    Field<Real> scalarcross[sim.num_pk];
     Field<Cplx> scalarFTcross[sim.num_pk];
+    PlanFFT<Cplx> plan_scalarcross[sim.num_pk];
     for (int i = 0; i<sim.num_pk; ++i){
-        scalarFTcross[i].initialize(latFT, 1);
+	scalarcross[i].initialize(lat, 1);
+	scalarFTcross[i].initialize(latFT, 1);
+	plan_scalarcross[i].initialize(&scalarcross[i], &scalarFTcross[i]);
     }
+/*********************************************************/
 
 	source.initialize(lat,1);
 	phi.initialize(lat,1);

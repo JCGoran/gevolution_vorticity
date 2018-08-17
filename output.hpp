@@ -22,17 +22,15 @@ using namespace std;
 // Copies the input field into the output field
 void copyField(Field<Cplx> * input, Field<Cplx> *output = NULL)
 {
-  Site x(input->lattice());
+  rKSite x(input->lattice());
 
-  if (output != NULL)
-    {
-      for(x.first(); x.test(); x.next())
-    {
-      (*output)(x,0) = (*input)(x,0);
-      (*output)(x,1) = (*input)(x,1);
-      (*output)(x,2) = (*input)(x,2);
-    }
-    }
+  if (output != NULL){
+      for(x.first(); x.test(); x.next()){
+	      (*output)(x) = (*input)(x);
+//	      (*output)(x,1) = (*input)(x,1);
+//	      (*output)(x,2) = (*input)(x,2);
+      }
+  }
 }
 
 
@@ -599,14 +597,20 @@ void writeSpectra(
 		extractPowerSpectrum(*scalarFT, kbin, power, kscatter, pscatter, occupation, sim.numbins, false, KTYPE_LINEAR);
 		sprintf(filename, "%s%s%03d_phi.dat", sim.output_path, sim.basename_pk, pkcount);
 		writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI, filename, "power spectrum of phi", a);
-        copyField(scalarFT, &(scalarFTcross[pkcount]));
 
+/********************************************************/
+/********************************************************/
+/********************************************************/
+	copyField(scalarFT, &(scalarFTcross[pkcount]));
         // outputs the power spectra P_phi(k, z_1, z_2)
         for (int i = 0; i<pkcount; ++i){
             extractCrossSpectrum(scalarFTcross[i], *scalarFT, kbin, power, kscatter, pscatter, occupation, sim.numbins, false, KTYPE_LINEAR);
             sprintf(filename, "%s%s%03d_phi_%03d.dat", sim.output_path, sim.basename_pk, pkcount, i);
             writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI, filename, "cross spectrum of phi(z1) and phi(z2)", a);
         }
+/********************************************************/
+/********************************************************/
+/********************************************************/
 	}
 			
 	if (sim.out_pk & MASK_CHI)
