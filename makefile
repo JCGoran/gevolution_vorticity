@@ -1,13 +1,9 @@
-HDF5INCL= -I/home/leporif7/Nbody/Lib/hdf5-1.10.1_lib/include
-HDF5LIBS= -L/home/leporif7/Nbody/Lib/hdf5-1.10.1_lib/lib
-FFTWINCL= -I/home/leporif7/Nbody/Lib/fftw-3.3.6-pl2_lib/include
-FFTWLIBS= -L/home/leporif7/Nbody/Lib/fftw-3.3.6-pl2_lib/lib
-GSLINCL= -I/home/leporif7/Nbody/Lib/gsl-1.16_lib/include
-GSLLIBS= -L/home/leporif7/Nbody/Lib/gsl-1.16_lib/lib
 # programming environment
-COMPILER     := mpic++
-INCLUDE      := -I/home/leporif7/Nbody/Lib/LATfield2 $(HDF5INCL) $(FFTWINCL) $(GSLINCL)
-LIB          := $(HDF5LIBS) $(FFTWLIBS) $(GSLLIBS) -lfftw3 -lm -lhdf5 -lgsl -lgslcblas 
+COMPILER = /usr/lib64/mpi/gcc/mvapich2/bin/mpic++
+INCLUDE      := -I$(HOME)/code/LATfield2
+LIBFFTW := -L$(HOME)/bin/fftw3/lib -I$(HOME)/bin/fftw3/include
+LIBHDF5 := -L$(HOME)/code/hdf5/lib -I$(HOME)/code/hdf5/include
+LIB          := -lfftw3 -lm -lhdf5 -lgsl -lgslcblas $(LIBFFTW) $(LIBHDF5)
 #-lfftw3 -lm -lhdf5 -lgsl -lgslcblas
 
 # target and source
