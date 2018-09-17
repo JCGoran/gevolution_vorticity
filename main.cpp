@@ -62,6 +62,9 @@
 #include "hibernation.hpp"
 #include "vorticity.hpp"
 
+#include "memory_parallel.hpp"
+
+
 using namespace std;
 
 using namespace LATfield2;
@@ -449,7 +452,13 @@ int main(int argc, char **argv)
 #endif
 
 	while (true)    // main loop
+
 	{
+    long global_vmrss, global_vmsize;
+    get_global_memory_usage_kb(&global_vmrss, &global_vmsize, n*m);
+
+    COUT << "Global memory usage: VmRSS = " << global_vmrss << " KB, VmSize = " << global_vmsize << " KB" << endl;
+
 #ifdef BENCHMARK		
 		cycle_start_time = MPI_Wtime();
 #endif

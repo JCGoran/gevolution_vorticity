@@ -1,9 +1,7 @@
 # programming environment
-COMPILER = /usr/lib64/mpi/gcc/mvapich2/bin/mpic++
+COMPILER = CC
 INCLUDE      := -I$(HOME)/code/LATfield2
-LIBFFTW := -L$(HOME)/bin/fftw3/lib -I$(HOME)/bin/fftw3/include
-LIBHDF5 := -L$(HOME)/code/hdf5/lib -I$(HOME)/code/hdf5/include
-LIB          := -lfftw3 -lm -lhdf5 -lgsl -lgslcblas $(LIBFFTW) $(LIBHDF5)
+LIB          := -lfftw3 -lm -lhdf5 -lgsl -lgslcblas
 #-lfftw3 -lm -lhdf5 -lgsl -lgslcblas
 
 # target and source
