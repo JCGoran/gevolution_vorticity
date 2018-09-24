@@ -33,6 +33,9 @@
 //////////////////////////
 
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #ifdef HAVE_CLASS
 #include "class.h"
 #undef MAX			// due to macro collision this has to be done BEFORE including LATfield2 headers!
@@ -167,6 +170,8 @@ int main(int argc, char **argv)
 	numparam = loadParameterFile(settingsfile, params);
 	
 	usedparams = parseMetadata(params, numparam, sim, cosmo, ic);
+
+        parseOutputPath(sim.output_path);
 	
 	COUT << " parsing of settings file completed. " << numparam << " parameters found, " << usedparams << " were used." << endl;
 	
