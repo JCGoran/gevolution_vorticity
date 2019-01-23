@@ -1,7 +1,7 @@
 //////////////////////////
 // metadata.hpp
 //////////////////////////
-// 
+//
 // Constants and metadata structures
 //
 // Author: Julian Adamek (Université de Genève & Observatoire de Paris)
@@ -49,7 +49,9 @@
 #define MASK_XSPEC  2048
 #define MASK_DELTA  4096
 #define MASK_DBARE  8192
+#ifdef HAVE_VORTICITY
 #define MASK_VORT   16384
+#endif
 
 #define ICFLAG_CORRECT_DISPLACEMENT 1
 #define ICFLAG_KSPHERE              2
@@ -73,13 +75,9 @@
 #define VECTOR_PARABOLIC            0
 #define VECTOR_ELLIPTIC             1
 
-#define VEL_ZERO                    0
-#define VEL_PAST                    1
-#define VEL_SMOOTH                  2
-#define VEL_PAST_RESCALED           3
-
-#define SUB_VEL                     0
-#define VEL_NL                      1
+#ifdef HAVE_VORTICITY
+#define VEL_PAST_RESCALED           1
+#endif
 
 // Physical constants
 #define C_PLANCK_LAW      4.48147e-7    // omega_g / (T_cmb [K])^4
@@ -166,8 +164,10 @@ struct metadata
 	int baryon_flag;
 	int gr_flag;
 	int vector_flag;
+#ifdef HAVE_VORTICITY
         int velocity_flag;
-        int subvel_flag;
+        double sigma;
+#endif
 	int radiation_flag;
 	int out_pk;
 	int out_snapshot;
@@ -180,7 +180,6 @@ struct metadata
 	double steplimit;
 	double boxsize;
 	double wallclocklimit;
-        double sigma;
 	double z_in;
 	double z_snapshot[MAX_OUTPUTS];
 	double z_pk[MAX_OUTPUTS];

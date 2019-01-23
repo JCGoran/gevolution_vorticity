@@ -21,7 +21,8 @@ double D1_prime(
     struct cosmology par, double a
 )
 {
-    gsl_function G1 = { .function = &g1, .params = &par };
+    gsl_function G1;
+    G1.function = &g1, G1.params = &par;
     const double delta_a = 0.005;
     double a_minus = a*(1 - delta_a);
     double a_plus  = a*(1 + delta_a);
