@@ -1047,6 +1047,8 @@ void projection_T0i_project(Particles<part,part_info,part_dataType> * pcls, Fiel
         		referPos[i] = xPart.coord(i)*dx;
 
             for(int i = 0; i < 12; i++) qi[i]=0.0;
+
+            // TODO: find out why this part is commented out!
             /*
 			if (phi != NULL)
 			{
@@ -1059,6 +1061,7 @@ void projection_T0i_project(Particles<part,part_info,part_dataType> * pcls, Fiel
 				localCubePhi[6] = (*phi)(xT0i+0+1);
 				localCubePhi[7] = (*phi)(xT0i+0+1+2);
 			}
+
 	    */
 			for (it = (pcls->field())(xPart).parts.begin(); it != (pcls->field())(xPart).parts.end(); ++it)
 			{
@@ -1266,6 +1269,7 @@ void projection_Tij_project(Particles<part, part_info, part_dataType> * pcls, Fi
 #define projection_Tij_comm symtensorProjectionCICNGP_comm
 #endif
 
+#ifdef HAVE_VORTICITY
 //////////////////////////
 // projection_Ti0_project
 //////////////////////////
@@ -1397,8 +1401,7 @@ void projection_Ti0_project(Particles<part, part_info, part_dataType> * pcls, Fi
 		}
 	}
 }
-
-
+#endif
 
 #endif
 

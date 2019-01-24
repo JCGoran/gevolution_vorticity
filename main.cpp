@@ -476,7 +476,7 @@ int main(int argc, char **argv)
 #endif
 
         if (sim.vector_flag == VECTOR_ELLIPTIC)
-          {
+        {
             projection_init(&Bi);
             projection_T0i_project(&pcls_cdm, &Bi, &phi);
             if (sim.baryon_flag)

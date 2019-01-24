@@ -4,7 +4,7 @@
 //
 // Function use to extract the vorticity field from gevolution
 //
-// Last modified: December 2017
+// Last modified: January 2019
 //
 //////////////////////////
 
@@ -51,227 +51,227 @@ using namespace LATfield2;
 //                                                                                                                                 //////////////////////////
 void loadTransferFunctionsVel(const char * filename, gsl_spline * & tk_psi, gsl_spline * & tk_theta, const char * qname, const double boxsize, const double h)
 {
-  int i = 0, numpoints = 0;
-  double * k;
-  double * tk_p;
-  double * tk_t;
+    int i = 0, numpoints = 0;
+    double * k;
+    double * tk_p;
+    double * tk_t;
 
-  if (parallel.grid_rank()[0] == 0) // read file
+    if (parallel.grid_rank()[0] == 0) // read file
     {
-      FILE * tkfile;
-      char line[MAX_LINESIZE];
-      char format[MAX_LINESIZE];
-      char * ptr;
-      double dummy[3];
-      int kcol = -1, dcol = -1, tcol = -1, colmax;
+        FILE * tkfile;
+        char line[MAX_LINESIZE];
+        char format[MAX_LINESIZE];
+        char * ptr;
+        double dummy[3];
+        int kcol = -1, dcol = -1, tcol = -1, colmax;
 
-      line[MAX_LINESIZE-1] = 0;
+        line[MAX_LINESIZE-1] = 0;
 
-      tkfile = fopen(filename, "r");
+        tkfile = fopen(filename, "r");
 
-      if (tkfile == NULL)
-	{
-	  cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Unable to open file " << filename << "." << endl;
-	  parallel.abortForce();
-	}
+        if (tkfile == NULL)
+        {
+            cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Unable to open file " << filename << "." << endl;
+            parallel.abortForce();
+        }
 
-      while (!feof(tkfile) && !ferror(tkfile))
-	{
-	  fgets(line, MAX_LINESIZE, tkfile);
-	  if (line[MAX_LINESIZE-1] != 0)
-	    {
-	      cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Character limit (" << (MAX_LINESIZE-1) << "/line) exceeded in file " << filename << "." << endl;
-	      fclose(tkfile);
-	      parallel.abortForce();
-	    }
+        while (!feof(tkfile) && !ferror(tkfile))
+        {
+            fgets(line, MAX_LINESIZE, tkfile);
+            if (line[MAX_LINESIZE-1] != 0)
+            {
+                cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Character limit (" << (MAX_LINESIZE-1) << "/line) exceeded in file " << filename << "." << endl;
+                fclose(tkfile);
+                parallel.abortForce();
+            }
 
-	  if (line[0] != '#' && !feof(tkfile) && !ferror(tkfile)) numpoints++;
-	}
+            if (line[0] != '#' && !feof(tkfile) && !ferror(tkfile)) numpoints++;
+        }
 
-      if (numpoints < 2)
-	{
-	  cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! No valid data found in file " << filename << "." << endl;
-	  fclose(tkfile);
-	  parallel.abortForce();
-	}
+        if (numpoints < 2)
+        {
+            cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! No valid data found in file " << filename << "." << endl;
+            fclose(tkfile);
+            parallel.abortForce();
+        }
 
-      k = (double *) malloc(sizeof(double) * numpoints);
-      tk_p = (double *) malloc(sizeof(double) * numpoints);
-      tk_t = (double *) malloc(sizeof(double) * numpoints);
+        k = (double *) malloc(sizeof(double) * numpoints);
+        tk_p = (double *) malloc(sizeof(double) * numpoints);
+        tk_t = (double *) malloc(sizeof(double) * numpoints);
 
-      if (k == NULL || tk_p == NULL || tk_t == NULL)
-	{
-	  cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Memory error." << endl;
-	  fclose(tkfile);
-	  parallel.abortForce();
-	}
+        if (k == NULL || tk_p == NULL || tk_t == NULL)
+        {
+            cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Memory error." << endl;
+            fclose(tkfile);
+            parallel.abortForce();
+        }
 
-      rewind(tkfile);
+        rewind(tkfile);
 
-      while (!feof(tkfile) && !ferror(tkfile))
-	{
-	  fgets(line, MAX_LINESIZE, tkfile);
-	  for (ptr = line, i = 0; (ptr = strchr(ptr, ':')) != NULL; i++)
-	    {
-	      ptr++;
-	      if (*ptr == 'k') kcol = i;
-	      else if (*ptr == 'p')
-		{
-		  if (strncmp(ptr, "psi", strlen("psi")) == 0) dcol = i;
-		}
-	      else if (*ptr == 't')
-		{
-		  if (strncmp(ptr+2, qname, strlen(qname)) == 0) tcol = i;
-		}
-	    }
+        while (!feof(tkfile) && !ferror(tkfile))
+        {
+            fgets(line, MAX_LINESIZE, tkfile);
+            for (ptr = line, i = 0; (ptr = strchr(ptr, ':')) != NULL; i++)
+            {
+                ptr++;
+                if (*ptr == 'k') kcol = i;
+                else if (*ptr == 'p')
+                {
+                    if (strncmp(ptr, "psi", strlen("psi")) == 0) dcol = i;
+                }
+                else if (*ptr == 't')
+                {
+                    if (strncmp(ptr+2, qname, strlen(qname)) == 0) tcol = i;
+                }
+            }
 
-	  if (kcol >= 0 && dcol >= 0 && tcol >= 0) break;
-	}
+            if (kcol >= 0 && dcol >= 0 && tcol >= 0) break;
+        }
 
       if (kcol < 0 || dcol < 0 || tcol < 0)
-	{
-	  cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Unable to identify requested columns!" << endl;
-	  fclose(tkfile);
-	  free(k);
-	  free(tk_p);
-	  free(tk_t);
-	  parallel.abortForce();
-	}
+    {
+      cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Unable to identify requested columns!" << endl;
+      fclose(tkfile);
+      free(k);
+      free(tk_p);
+      free(tk_t);
+      parallel.abortForce();
+    }
 
       colmax = i;
       for (i = 0, ptr=format; i < colmax; i++)
-	{
-	  if (i == kcol || i == dcol || i == tcol)
-	    {
-	      strncpy(ptr, " %lf", 4);
-	      ptr += 4;
-	    }
-	  else
-	    {
-	      strncpy(ptr, " %*lf", 5);
-	      ptr += 5;
-	    }
-	}
+    {
+      if (i == kcol || i == dcol || i == tcol)
+        {
+          strncpy(ptr, " %lf", 4);
+          ptr += 4;
+        }
+      else
+        {
+          strncpy(ptr, " %*lf", 5);
+          ptr += 5;
+        }
+    }
       *ptr = '\0';
 
       if (kcol < dcol && dcol < tcol)
-	{
-	  kcol = 0; dcol = 1; tcol = 2;
-	}
+    {
+      kcol = 0; dcol = 1; tcol = 2;
+    }
       else if (kcol < tcol && tcol < dcol)
-	{
-	  kcol = 0; dcol = 2; tcol = 1;
-	}
+    {
+      kcol = 0; dcol = 2; tcol = 1;
+    }
       else if (dcol < kcol && kcol < tcol)
-	{
-	  kcol = 1; dcol = 0; tcol = 2;
-	}
+    {
+      kcol = 1; dcol = 0; tcol = 2;
+    }
       else if (dcol < tcol && tcol < kcol)
-	{
-	  kcol = 2; dcol = 0; tcol = 1;
-	}
+    {
+      kcol = 2; dcol = 0; tcol = 1;
+    }
       else if (tcol < kcol && kcol < dcol)
-	{
-	  kcol = 1; dcol = 2; tcol = 0;
-	}
+    {
+      kcol = 1; dcol = 2; tcol = 0;
+    }
       else if (tcol < dcol && dcol < kcol)
-	{
-	  kcol = 2; dcol = 1; tcol = 0;
-	}
+    {
+      kcol = 2; dcol = 1; tcol = 0;
+    }
       else
-	{
-	  cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Inconsistent columns!" << endl;
-	  fclose(tkfile);
-	  free(k);
-	  free(tk_p);
-	  free(tk_t);
-	  parallel.abortForce();
-	}
+    {
+      cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Inconsistent columns!" << endl;
+      fclose(tkfile);
+      free(k);
+      free(tk_p);
+      free(tk_t);
+      parallel.abortForce();
+    }
 
       i = 0;
       while (!feof(tkfile) && !ferror(tkfile))
-	{
-	  fgets(line, MAX_LINESIZE, tkfile);
+    {
+      fgets(line, MAX_LINESIZE, tkfile);
 
-	  if (sscanf(line, format, dummy, dummy+1, dummy+2) == 3 && !feof(tkfile) && !ferror(tkfile))
-	    {
-	      if (dummy[kcol] < 0.)
-		{
-		  cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Negative k-value encountered." << endl;
-		  free(k);
-		  free(tk_p);
-		  free(tk_t);
-		  fclose(tkfile);
-		  parallel.abortForce();
-		}
+      if (sscanf(line, format, dummy, dummy+1, dummy+2) == 3 && !feof(tkfile) && !ferror(tkfile))
+        {
+          if (dummy[kcol] < 0.)
+        {
+          cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Negative k-value encountered." << endl;
+          free(k);
+          free(tk_p);
+          free(tk_t);
+          fclose(tkfile);
+          parallel.abortForce();
+        }
 
-	      if (i > 0)
-		{
-		  if (k[i-1] >= dummy[kcol] * boxsize)
-		    {
-		      cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! k-values are not strictly ordered." << endl;
-		      free(k);
-		      free(tk_p);
-		      free(tk_t);
-		      fclose(tkfile);
-		      parallel.abortForce();
-		    }
-		}
+          if (i > 0)
+        {
+          if (k[i-1] >= dummy[kcol] * boxsize)
+            {
+              cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! k-values are not strictly ordered." << endl;
+              free(k);
+              free(tk_p);
+              free(tk_t);
+              fclose(tkfile);
+              parallel.abortForce();
+            }
+        }
 
-	      k[i] = dummy[kcol] * boxsize;
-	      tk_p[i] = dummy[dcol];
-	      tk_t[i] = dummy[tcol] * boxsize / h;
-	      i++;
-	    }
-	}
+          k[i] = dummy[kcol] * boxsize;
+          tk_p[i] = dummy[dcol];
+          tk_t[i] = dummy[tcol] * boxsize / h;
+          i++;
+        }
+    }
 
       fclose(tkfile);
 
       if (i != numpoints)
-	{
-	  cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! File may have changed or file pointer corrupted." << endl;
-	  free(k);
-	  free(tk_p);
-	  free(tk_t);
-	  parallel.abortForce();
-	}
+    {
+      cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! File may have changed or file pointer corrupted." << endl;
+      free(k);
+      free(tk_p);
+      free(tk_t);
+      parallel.abortForce();
+    }
 
       parallel.broadcast_dim0<int>(numpoints, 0);
     }
-  else
+    else
     {
       parallel.broadcast_dim0<int>(numpoints, 0);
 
       if (numpoints < 2)
-	{
-	  cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Communication error." << endl;
-	  parallel.abortForce();
-	}
+    {
+      cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Communication error." << endl;
+      parallel.abortForce();
+    }
 
       k = (double *) malloc(sizeof(double) * numpoints);
       tk_p = (double *) malloc(sizeof(double) * numpoints);
       tk_t = (double *) malloc(sizeof(double) * numpoints);
 
       if (k == NULL || tk_p == NULL || tk_t == NULL)
-	{
-	  cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Memory error." << endl;
-	  parallel.abortForce();
-	}
+    {
+      cerr << " proc#" << parallel.rank() << ": error in loadTransferFunctions! Memory error." << endl;
+      parallel.abortForce();
+    }
     }
 
-  parallel.broadcast_dim0<double>(k, numpoints, 0);
-  parallel.broadcast_dim0<double>(tk_p, numpoints, 0);
-  parallel.broadcast_dim0<double>(tk_t, numpoints, 0);
+    parallel.broadcast_dim0<double>(k, numpoints, 0);
+    parallel.broadcast_dim0<double>(tk_p, numpoints, 0);
+    parallel.broadcast_dim0<double>(tk_t, numpoints, 0);
 
-  tk_psi = gsl_spline_alloc(gsl_interp_cspline, numpoints);
-  tk_theta = gsl_spline_alloc(gsl_interp_cspline, numpoints);
+    tk_psi = gsl_spline_alloc(gsl_interp_cspline, numpoints);
+    tk_theta = gsl_spline_alloc(gsl_interp_cspline, numpoints);
 
-  gsl_spline_init(tk_psi, k, tk_p, numpoints);
-  gsl_spline_init(tk_theta, k, tk_t, numpoints);
+    gsl_spline_init(tk_psi, k, tk_p, numpoints);
+    gsl_spline_init(tk_theta, k, tk_t, numpoints);
 
-  free(k);
-  free(tk_p);
-  free(tk_t);
+    free(k);
+    free(tk_p);
+    free(tk_t);
 }
 
 #ifdef FFT3D
@@ -312,292 +312,292 @@ void loadTransferFunctionsVel(const char * filename, gsl_spline * & tk_psi, gsl_
 template<int ignorekernel = 1>
 void generateRealizationVel(Field<Cplx> & potFT, const Real coeff, const gsl_spline * pkspline, const unsigned int seed, const int ksphere = 0, const int deconvolve_f = 1)
 {
-	const int linesize = potFT.lattice().size(1);
-	const int kmax = (linesize / 2) - 1;
-	rKSite k(potFT.lattice());
-	int kx, ky, kz, i, j;
-	int kymin, kymax, kzmin, kzmax;
-	float r1, r2, k2, s;
-	float * sinc;
-	sitmo::prng_engine prng;
-	uint64_t huge_skip = HUGE_SKIP;
-	gsl_interp_accel * acc = gsl_interp_accel_alloc();
+    const int linesize = potFT.lattice().size(1);
+    const int kmax = (linesize / 2) - 1;
+    rKSite k(potFT.lattice());
+    int kx, ky, kz, i, j;
+    int kymin, kymax, kzmin, kzmax;
+    float r1, r2, k2, s;
+    float * sinc;
+    sitmo::prng_engine prng;
+    uint64_t huge_skip = HUGE_SKIP;
+    gsl_interp_accel * acc = gsl_interp_accel_alloc();
 
-	sinc = (float *) malloc(linesize * sizeof(float));
+    sinc = (float *) malloc(linesize * sizeof(float));
 
-	sinc[0] = 1.;
-	if (deconvolve_f == 1)
-	{
-		for (i = 1; i < linesize; i++)
-			sinc[i] = sin(M_PI * (float) i / (float) linesize) * (float) linesize / (M_PI * (float) i);
-	}
-	else
-	{
-		for (i = 1; i < linesize; i++)
-			sinc[i] = 1.;
-	}
+    sinc[0] = 1.;
+    if (deconvolve_f == 1)
+    {
+        for (i = 1; i < linesize; i++)
+        sinc[i] = sin(M_PI * (float) i / (float) linesize) * (float) linesize / (M_PI * (float) i);
+    }
+    else
+    {
+        for (i = 1; i < linesize; i++)
+            sinc[i] = 1.;
+    }
 
-	k.initialize(potFT.lattice(), potFT.lattice().siteLast());
-	kymax = k.coord(1);
-	kzmax = k.coord(2);
-	k.initialize(potFT.lattice(), potFT.lattice().siteFirst());
-	kymin = k.coord(1);
-	kzmin = k.coord(2);
+    k.initialize(potFT.lattice(), potFT.lattice().siteLast());
+    kymax = k.coord(1);
+    kzmax = k.coord(2);
+    k.initialize(potFT.lattice(), potFT.lattice().siteFirst());
+    kymin = k.coord(1);
+    kzmin = k.coord(2);
 
-	if (kymin < (linesize / 2) + 1 && kzmin < (linesize / 2) + 1)
-	{
-		prng.seed(seed);
+    if (kymin < (linesize / 2) + 1 && kzmin < (linesize / 2) + 1)
+    {
+    	prng.seed(seed);
 
-		if (kymin == 0 && kzmin == 0)
-		{
-			k.setCoord(0, 0, 0);
-			potFT(k) = Cplx(0.,0.);
-			kx = 1;
-		}
-		else
-		{
-			kx = 0;
-			prng.discard(((uint64_t) kzmin * huge_skip + (uint64_t) kymin) * huge_skip);
-		}
+    	if (kymin == 0 && kzmin == 0)
+    	{
+    		k.setCoord(0, 0, 0);
+    		potFT(k) = Cplx(0.,0.);
+    		kx = 1;
+    	}
+    	else
+    	{
+    		kx = 0;
+    		prng.discard(((uint64_t) kzmin * huge_skip + (uint64_t) kymin) * huge_skip);
+    	}
 
-		for (kz = kzmin; kz < (linesize / 2) + 1 && kz <= kzmax; kz++)
-		{
-			for (ky = kymin, j = 0; ky < (linesize / 2) + 1 && ky <= kymax; ky++, j++)
-			{
-				for (i = 0; kx < (linesize / 2) + 1; kx++)
-				{
-					k.setCoord(kx, ky, kz);
+    	for (kz = kzmin; kz < (linesize / 2) + 1 && kz <= kzmax; kz++)
+    	{
+    		for (ky = kymin, j = 0; ky < (linesize / 2) + 1 && ky <= kymax; ky++, j++)
+    		{
+    			for (i = 0; kx < (linesize / 2) + 1; kx++)
+    			{
+    				k.setCoord(kx, ky, kz);
 
-					k2 = (float) (kx * kx) + (float) (ky * ky) + (float) (kz * kz);
+    				k2 = (float) (kx * kx) + (float) (ky * ky) + (float) (kz * kz);
 
-					if (kx >= kmax || ky >= kmax || kz >= kmax || (k2 >= kmax * kmax && ksphere > 0))
-					{
-						potFT(k) = Cplx(0., 0.);
-					}
-					else
-					{
-						s = sinc[kx] * sinc[ky] * sinc[kz];
-						k2 *= 4. * M_PI * M_PI;
-						do
-						{
-							r1 = (float) prng() / (float) sitmo::prng_engine::max();
-							i++;
-						}
-						while (r1 == 0.);
-						r2 = (float) prng() / (float) sitmo::prng_engine::max();
-						i++;
+    				if (kx >= kmax || ky >= kmax || kz >= kmax || (k2 >= kmax * kmax && ksphere > 0))
+    				{
+    					potFT(k) = Cplx(0., 0.);
+    				}
+    				else
+    				{
+    					s = sinc[kx] * sinc[ky] * sinc[kz];
+    					k2 *= 4. * M_PI * M_PI;
+    					do
+    					{
+    						r1 = (float) prng() / (float) sitmo::prng_engine::max();
+    						i++;
+    					}
+    					while (r1 == 0.);
+    					r2 = (float) prng() / (float) sitmo::prng_engine::max();
+    					i++;
 
-						potFT(k) = (ignorekernel ? Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
-					}
-				}
-				prng.discard(huge_skip - (uint64_t) i);
-				kx = 0;
-			}
-			prng.discard(huge_skip * (huge_skip - (uint64_t) j));
-		}
-	}
+    					potFT(k) = (ignorekernel ? Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
+    				}
+    			}
+    			prng.discard(huge_skip - (uint64_t) i);
+    			kx = 0;
+    		}
+    		prng.discard(huge_skip * (huge_skip - (uint64_t) j));
+    	}
+    }
 
-	if (kymax >= (linesize / 2) + 1 && kzmin < (linesize / 2) + 1)
-	{
-		prng.seed(seed);
-		prng.discard(((huge_skip + (uint64_t) kzmin) * huge_skip + (uint64_t) (linesize - kymax)) * huge_skip);
+    if (kymax >= (linesize / 2) + 1 && kzmin < (linesize / 2) + 1)
+    {
+    	prng.seed(seed);
+    	prng.discard(((huge_skip + (uint64_t) kzmin) * huge_skip + (uint64_t) (linesize - kymax)) * huge_skip);
 
-		for (kz = kzmin; kz < (linesize / 2) + 1 && kz <= kzmax; kz++)
-		{
-			for (ky = kymax, j = 0; ky >= (linesize / 2) + 1 && ky >= kymin; ky--, j++)
-			{
-				for (kx = 0, i = 0; kx < (linesize / 2) + 1; kx++)
-				{
-					k.setCoord(kx, ky, kz);
+    	for (kz = kzmin; kz < (linesize / 2) + 1 && kz <= kzmax; kz++)
+    	{
+    		for (ky = kymax, j = 0; ky >= (linesize / 2) + 1 && ky >= kymin; ky--, j++)
+    		{
+    			for (kx = 0, i = 0; kx < (linesize / 2) + 1; kx++)
+    			{
+    				k.setCoord(kx, ky, kz);
 
-					k2 = (float) (kx * kx) + (float) ((linesize-ky) * (linesize-ky)) + (float) (kz * kz);
+    				k2 = (float) (kx * kx) + (float) ((linesize-ky) * (linesize-ky)) + (float) (kz * kz);
 
-					if (kx >= kmax || (linesize-ky) >= kmax || kz >= kmax || (k2 >= kmax * kmax && ksphere > 0))
-					{
-						potFT(k) = Cplx(0., 0.);
-					}
-					else
-					{
-						s = sinc[kx] * sinc[linesize-ky] * sinc[kz];
-						k2 *= 4. * M_PI * M_PI;
-						do
-						{
-							r1 = (float) prng() / (float) sitmo::prng_engine::max();
-							i++;
-						}
-						while (r1 == 0.);
-						r2 = (float) prng() / (float) sitmo::prng_engine::max();
-						i++;
+    				if (kx >= kmax || (linesize-ky) >= kmax || kz >= kmax || (k2 >= kmax * kmax && ksphere > 0))
+    				{
+    					potFT(k) = Cplx(0., 0.);
+    				}
+    				else
+    				{
+    					s = sinc[kx] * sinc[linesize-ky] * sinc[kz];
+    					k2 *= 4. * M_PI * M_PI;
+    					do
+    					{
+    						r1 = (float) prng() / (float) sitmo::prng_engine::max();
+    						i++;
+    					}
+    					while (r1 == 0.);
+    					r2 = (float) prng() / (float) sitmo::prng_engine::max();
+    					i++;
 
-						potFT(k) = (ignorekernel ? Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
-					}
-				}
-				prng.discard(huge_skip - (uint64_t) i);
-			}
-			prng.discard(huge_skip * (huge_skip - (uint64_t) j));
-		}
-	}
+    					potFT(k) = (ignorekernel ? Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
+    				}
+    			}
+    			prng.discard(huge_skip - (uint64_t) i);
+    		}
+    		prng.discard(huge_skip * (huge_skip - (uint64_t) j));
+    	}
+    }
 
-	if (kymin < (linesize / 2) + 1 && kzmax >= (linesize / 2) + 1)
-	{
-		prng.seed(seed);
-		prng.discard(((huge_skip + huge_skip + (uint64_t) (linesize - kzmax)) * huge_skip + (uint64_t) kymin) * huge_skip);
+    if (kymin < (linesize / 2) + 1 && kzmax >= (linesize / 2) + 1)
+    {
+    	prng.seed(seed);
+    	prng.discard(((huge_skip + huge_skip + (uint64_t) (linesize - kzmax)) * huge_skip + (uint64_t) kymin) * huge_skip);
 
-		for (kz = kzmax; kz >= (linesize / 2) + 1 && kz >= kzmin; kz--)
-		{
-			for (ky = kymin, j = 0; ky < (linesize / 2) + 1 && ky <= kymax; ky++, j++)
-			{
-				for (kx = 1, i = 0; kx < (linesize / 2) + 1; kx++)
-				{
-					k.setCoord(kx, ky, kz);
+    	for (kz = kzmax; kz >= (linesize / 2) + 1 && kz >= kzmin; kz--)
+    	{
+    		for (ky = kymin, j = 0; ky < (linesize / 2) + 1 && ky <= kymax; ky++, j++)
+    		{
+    			for (kx = 1, i = 0; kx < (linesize / 2) + 1; kx++)
+    			{
+    				k.setCoord(kx, ky, kz);
 
-					k2 = (float) (kx * kx) + (float) (ky * ky) + (float) ((linesize-kz) * (linesize-kz));
+    				k2 = (float) (kx * kx) + (float) (ky * ky) + (float) ((linesize-kz) * (linesize-kz));
 
-					if (kx >= kmax || ky >= kmax || (linesize-kz) >= kmax || (k2 >= kmax * kmax && ksphere > 0))
-					{
-						potFT(k) = Cplx(0., 0.);
-					}
-					else
-					{
-						s = sinc[kx] * sinc[ky] * sinc[linesize-kz];
-						k2 *= 4. * M_PI * M_PI;
-						do
-						{
-							r1 = (float) prng() / (float) sitmo::prng_engine::max();
-							i++;
-						}
-						while (r1 == 0.);
-						r2 = (float) prng() / (float) sitmo::prng_engine::max();
-						i++;
+    				if (kx >= kmax || ky >= kmax || (linesize-kz) >= kmax || (k2 >= kmax * kmax && ksphere > 0))
+    				{
+    					potFT(k) = Cplx(0., 0.);
+    				}
+    				else
+    				{
+    					s = sinc[kx] * sinc[ky] * sinc[linesize-kz];
+    					k2 *= 4. * M_PI * M_PI;
+    					do
+    					{
+    						r1 = (float) prng() / (float) sitmo::prng_engine::max();
+    						i++;
+    					}
+    					while (r1 == 0.);
+    					r2 = (float) prng() / (float) sitmo::prng_engine::max();
+    					i++;
 
-						potFT(k) = (ignorekernel ? Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
-					}
-				}
-				prng.discard(huge_skip - (uint64_t) i);
-			}
-			prng.discard(huge_skip * (huge_skip - (uint64_t) j));
-		}
+    					potFT(k) = (ignorekernel ? Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
+    				}
+    			}
+    			prng.discard(huge_skip - (uint64_t) i);
+    		}
+    		prng.discard(huge_skip * (huge_skip - (uint64_t) j));
+    	}
 
-		prng.seed(seed);
-		prng.discard(((uint64_t) (linesize - kzmax) * huge_skip + (uint64_t) kymin) * huge_skip);
-		kx = 0;
+    	prng.seed(seed);
+    	prng.discard(((uint64_t) (linesize - kzmax) * huge_skip + (uint64_t) kymin) * huge_skip);
+    	kx = 0;
 
-		for (kz = kzmax; kz >= (linesize / 2) + 1 && kz >= kzmin; kz--)
-		{
-			for (ky = kymin, j = 0; ky < (linesize / 2) + 1 && ky <= kymax; ky++, j++)
-			{
-				k.setCoord(kx, ky, kz);
+    	for (kz = kzmax; kz >= (linesize / 2) + 1 && kz >= kzmin; kz--)
+    	{
+    		for (ky = kymin, j = 0; ky < (linesize / 2) + 1 && ky <= kymax; ky++, j++)
+    		{
+    			k.setCoord(kx, ky, kz);
 
-				k2 = (float) (ky * ky) + (float) ((linesize-kz) * (linesize-kz));
-				i = 0;
+    			k2 = (float) (ky * ky) + (float) ((linesize-kz) * (linesize-kz));
+    			i = 0;
 
-				if (ky >= kmax || (linesize-kz) >= kmax || (k2 >= kmax * kmax && ksphere > 0))
-				{
-					potFT(k) = Cplx(0., 0.);
-				}
-				else
-				{
-					s = sinc[ky] * sinc[linesize-kz];
-					k2 *= 4. * M_PI * M_PI;
-					do
-					{
-						r1 = (float) prng() / (float) sitmo::prng_engine::max();
-						i++;
-					}
-					while (r1 == 0.);
-					r2 = (float) prng() / (float) sitmo::prng_engine::max();
-					i++;
+    			if (ky >= kmax || (linesize-kz) >= kmax || (k2 >= kmax * kmax && ksphere > 0))
+    			{
+    				potFT(k) = Cplx(0., 0.);
+    			}
+    			else
+    			{
+    				s = sinc[ky] * sinc[linesize-kz];
+    				k2 *= 4. * M_PI * M_PI;
+    				do
+    				{
+    					r1 = (float) prng() / (float) sitmo::prng_engine::max();
+    					i++;
+    				}
+    				while (r1 == 0.);
+    				r2 = (float) prng() / (float) sitmo::prng_engine::max();
+    				i++;
 
-					potFT(k) = (ignorekernel? Cplx(cos(2. * M_PI * r2), -sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), -sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
-				}
+    				potFT(k) = (ignorekernel? Cplx(cos(2. * M_PI * r2), -sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), -sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
+    			}
 
-				prng.discard(huge_skip - (uint64_t) i);
-			}
-			prng.discard(huge_skip * (huge_skip - (uint64_t) j));
-		}
-	}
+    			prng.discard(huge_skip - (uint64_t) i);
+    		}
+    		prng.discard(huge_skip * (huge_skip - (uint64_t) j));
+    	}
+    }
 
-	if (kymax >= (linesize / 2) + 1 && kzmax >= (linesize / 2) + 1)
-	{
-		prng.seed(seed);
-		prng.discard(((huge_skip + huge_skip + huge_skip + (uint64_t) (linesize - kzmax)) * huge_skip + (uint64_t) (linesize - kymax)) * huge_skip);
+    if (kymax >= (linesize / 2) + 1 && kzmax >= (linesize / 2) + 1)
+    {
+    	prng.seed(seed);
+    	prng.discard(((huge_skip + huge_skip + huge_skip + (uint64_t) (linesize - kzmax)) * huge_skip + (uint64_t) (linesize - kymax)) * huge_skip);
 
-		for (kz = kzmax; kz >= (linesize / 2) + 1 && kz >= kzmin; kz--)
-		{
-			for (ky = kymax, j = 0; ky >= (linesize / 2) + 1 && ky >= kymin; ky--, j++)
-			{
-				for (kx = 1, i = 0; kx < (linesize / 2) + 1; kx++)
-				{
-					k.setCoord(kx, ky, kz);
+    	for (kz = kzmax; kz >= (linesize / 2) + 1 && kz >= kzmin; kz--)
+    	{
+    		for (ky = kymax, j = 0; ky >= (linesize / 2) + 1 && ky >= kymin; ky--, j++)
+    		{
+    			for (kx = 1, i = 0; kx < (linesize / 2) + 1; kx++)
+    			{
+    				k.setCoord(kx, ky, kz);
 
-					k2 = (float) (kx * kx) + (float) ((linesize-ky) * (linesize-ky)) + (float) ((linesize-kz) * (linesize-kz));
+    				k2 = (float) (kx * kx) + (float) ((linesize-ky) * (linesize-ky)) + (float) ((linesize-kz) * (linesize-kz));
 
-					if (kx >= kmax || (linesize-ky) >= kmax || (linesize-kz) >= kmax || (k2 >= kmax * kmax && ksphere > 0))
-					{
-						potFT(k) = Cplx(0., 0.);
-					}
-					else
-					{
-						s = sinc[kx] * sinc[linesize-ky] * sinc[linesize-kz];
-						k2 *= 4. * M_PI * M_PI;
-						do
-						{
-							r1 = (float) prng() / (float) sitmo::prng_engine::max();
-							i++;
-						}
-						while (r1 == 0.);
-						r2 = (float) prng() / (float) sitmo::prng_engine::max();
-						i++;
+    				if (kx >= kmax || (linesize-ky) >= kmax || (linesize-kz) >= kmax || (k2 >= kmax * kmax && ksphere > 0))
+    				{
+    					potFT(k) = Cplx(0., 0.);
+    				}
+    				else
+    				{
+    					s = sinc[kx] * sinc[linesize-ky] * sinc[linesize-kz];
+    					k2 *= 4. * M_PI * M_PI;
+    					do
+    					{
+    						r1 = (float) prng() / (float) sitmo::prng_engine::max();
+    						i++;
+    					}
+    					while (r1 == 0.);
+    					r2 = (float) prng() / (float) sitmo::prng_engine::max();
+    					i++;
 
-						potFT(k) = (ignorekernel ? Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
-					}
-				}
-				prng.discard(huge_skip - (uint64_t) i);
-			}
-			prng.discard(huge_skip * (huge_skip - (uint64_t) j));
-		}
+    					potFT(k) = (ignorekernel ? Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
+    				}
+    			}
+    			prng.discard(huge_skip - (uint64_t) i);
+    		}
+    		prng.discard(huge_skip * (huge_skip - (uint64_t) j));
+    	}
 
-		prng.seed(seed);
-		prng.discard(((huge_skip + huge_skip + (uint64_t) (linesize - kzmax)) * huge_skip + (uint64_t) (linesize - kymax)) * huge_skip);
-		kx = 0;
+    	prng.seed(seed);
+    	prng.discard(((huge_skip + huge_skip + (uint64_t) (linesize - kzmax)) * huge_skip + (uint64_t) (linesize - kymax)) * huge_skip);
+    	kx = 0;
 
-		for (kz = kzmax; kz >= (linesize / 2) + 1 && kz >= kzmin; kz--)
-		{
-			for (ky = kymax, j = 0; ky >= (linesize / 2) + 1 && ky >= kymin; ky--, j++)
-			{
-				k.setCoord(kx, ky, kz);
+    	for (kz = kzmax; kz >= (linesize / 2) + 1 && kz >= kzmin; kz--)
+    	{
+    		for (ky = kymax, j = 0; ky >= (linesize / 2) + 1 && ky >= kymin; ky--, j++)
+    		{
+    			k.setCoord(kx, ky, kz);
 
-				k2 = (float) ((linesize-ky) * (linesize-ky)) + (float) ((linesize-kz) * (linesize-kz));
-				i = 0;
+    			k2 = (float) ((linesize-ky) * (linesize-ky)) + (float) ((linesize-kz) * (linesize-kz));
+    			i = 0;
 
-				if ((linesize-ky) >= kmax || (linesize-kz) >= kmax || (k2 >= kmax * kmax && ksphere > 0))
-				{
-					potFT(k) = Cplx(0., 0.);
-				}
-				else
-				{
-					s = sinc[linesize-ky] * sinc[linesize-kz];
-					k2 *= 4. * M_PI * M_PI;
-					do
-					{
-						r1 = (float) prng() / (float) sitmo::prng_engine::max();
-						i++;
-					}
-					while (r1 == 0.);
-					r2 = (float) prng() / (float) sitmo::prng_engine::max();
-					i++;
+    			if ((linesize-ky) >= kmax || (linesize-kz) >= kmax || (k2 >= kmax * kmax && ksphere > 0))
+    			{
+    				potFT(k) = Cplx(0., 0.);
+    			}
+    			else
+    			{
+    				s = sinc[linesize-ky] * sinc[linesize-kz];
+    				k2 *= 4. * M_PI * M_PI;
+    				do
+    				{
+    					r1 = (float) prng() / (float) sitmo::prng_engine::max();
+    					i++;
+    				}
+    				while (r1 == 0.);
+    				r2 = (float) prng() / (float) sitmo::prng_engine::max();
+    				i++;
 
-					potFT(k) = (ignorekernel ? Cplx(cos(2. * M_PI * r2), -sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), -sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
-				}
+    				potFT(k) = (ignorekernel ? Cplx(cos(2. * M_PI * r2), -sin(2. * M_PI * r2)) : Cplx(cos(2. * M_PI * r2), -sin(2. * M_PI * r2)) * (1. + 7.5 * coeff / k2) / potFT(k)) * sqrt(-2. * log(r1)) * gsl_spline_eval(pkspline, sqrt(k2), acc) * s;
+    			}
 
-				prng.discard(huge_skip - (uint64_t) i);
-			}
-			prng.discard(huge_skip * (huge_skip - (uint64_t) j));
-		}
-	}
+    			prng.discard(huge_skip - (uint64_t) i);
+    		}
+    		prng.discard(huge_skip * (huge_skip - (uint64_t) j));
+    	}
+    }
 
-	gsl_interp_accel_free(acc);
-	free(sinc);
+    gsl_interp_accel_free(acc);
+    free(sinc);
 }
 
 #endif
@@ -661,10 +661,10 @@ void projectFTvelocityVR(Field<Cplx> & vRFT, Field<Cplx> & viFT)
       k2 = gridk2[k.coord(0)] + gridk2[k.coord(1)] + gridk2[k.coord(2)];
       if ((k.coord(0) == 0 || k.coord(0) == linesize/2)&&
           (k.coord(1) == 0 || k.coord(1) == linesize/2)&&
-	  (k.coord(2) == 0 || k.coord(2) == linesize/2)  ) {
-	vRFT(k, 0) = Cplx(0.,0.);
-	vRFT(k, 1) = Cplx(0.,0.);
-	vRFT(k, 2) = Cplx(0.,0.);
+      (k.coord(2) == 0 || k.coord(2) == linesize/2)  ) {
+    vRFT(k, 0) = Cplx(0.,0.);
+    vRFT(k, 1) = Cplx(0.,0.);
+    vRFT(k, 2) = Cplx(0.,0.);
       }
       else {
       tmp = (gridk[k.coord(0)] * viFT(k, 0) + gridk[k.coord(1)] * viFT(k, 1) + gridk[k.coord(2)] * viFT(k, 2)) / k2;
@@ -843,29 +843,29 @@ void convolve_field(Field<Cplx> * fieldFT_conv, Field<Cplx> * fieldFT, int dim_f
 
         rKSite k(fieldFT->lattice());
 
-	const int linesize = fieldFT->lattice().size(1);
-	int i;
-	Real * gridk2;
-	Real k2;
+    const int linesize = fieldFT->lattice().size(1);
+    int i;
+    Real * gridk2;
+    Real k2;
 
-	gridk2 = (Real *) malloc(linesize * sizeof(Real));
+    gridk2 = (Real *) malloc(linesize * sizeof(Real));
 
-	for (i = 0; i < linesize; i++)
-	{
-		gridk2[i] = 2. * (Real) linesize * sin(M_PI * (Real) i / (Real) linesize);
-		gridk2[i] *= gridk2[i];
-	}
+    for (i = 0; i < linesize; i++)
+    {
+    	gridk2[i] = 2. * (Real) linesize * sin(M_PI * (Real) i / (Real) linesize);
+    	gridk2[i] *= gridk2[i];
+    }
 
 
-	for (k.first(); k.test(); k.next())
-	{
-		k2 = gridk2[k.coord(0)] + gridk2[k.coord(1)] + gridk2[k.coord(2)];
-		for (i = 0; i < dim_field; i++){
-		  (*fieldFT_conv)(k, i) = (*fieldFT)(k, i)*exp(-0.5*k2*sigma*sigma);
-		}
-	}
+    for (k.first(); k.test(); k.next())
+    {
+    	k2 = gridk2[k.coord(0)] + gridk2[k.coord(1)] + gridk2[k.coord(2)];
+    	for (i = 0; i < dim_field; i++){
+    	  (*fieldFT_conv)(k, i) = (*fieldFT)(k, i)*exp(-0.5*k2*sigma*sigma);
+    	}
+    }
 
-	free(gridk2);
+    free(gridk2);
 
 }
 
@@ -898,9 +898,9 @@ void compute_velocity_smooth(Field<Real> * vi, Field<Real> * Ti0 = NULL, Field<R
 
 
 void compute_norm2_vR(
-		      Field<Real> * vR,
-		      Field<Real> * norm_vR2
-		      )
+    	      Field<Real> * vR,
+    	      Field<Real> * norm_vR2
+    	      )
 {
   Site x(norm_vR2->lattice());
   for(x.first(); x.test(); x.next()){
@@ -909,9 +909,9 @@ void compute_norm2_vR(
 }
 
 void compute_norm_w_old(
-		    Field<Real> &vR,
-		    Field<Real> &norm2_vR
-		    )
+    	    Field<Real> &vR,
+    	    Field<Real> &norm2_vR
+    	    )
 {
   Site x(vR.lattice());
   for(x.first(); x.test(); x.next()){
@@ -927,7 +927,7 @@ void compute_norm_w(
   Site x(norm_w->lattice());
   for(x.first(); x.test(); x.next()){
     (*norm_w)(x) = 8.0*(*norm2_vR)(x)-((*norm2_vR)(x-0-1-2) + (*norm2_vR)(x-0-1+2) + (*norm2_vR)(x-0+1-2) + (*norm2_vR)(x+0-1-2) + \
-				       (*norm2_vR)(x-0+1+2) + (*norm2_vR)(x+0-1+2) + (*norm2_vR)(x+0+1-2) + (*norm2_vR)(x+0+1+2) );
+    			       (*norm2_vR)(x-0+1+2) + (*norm2_vR)(x+0-1+2) + (*norm2_vR)(x+0+1-2) + (*norm2_vR)(x+0+1+2) );
     (*norm_w)(x) = sqrt(abs( (*norm_w)(x) ));
 
   }
@@ -935,7 +935,7 @@ void compute_norm_w(
 
 
 void compute_v2(
-		    Field<Real> * v2,
+    	    Field<Real> * v2,
                     Field<Real> * vi
                     )
 {
@@ -948,9 +948,9 @@ void compute_v2(
 
 
 void compute_laplacianFT(
-			 Field<Cplx> &source_scalar,
-			 Field<Cplx> &dest_scalar
-			 )
+    		 Field<Cplx> &source_scalar,
+    		 Field<Cplx> &dest_scalar
+    		 )
 {
   const int linesize = source_scalar.lattice().size(1);
   int i;
@@ -1005,7 +1005,7 @@ void compute_sigma2_rescaled(cosmology & cosmo, Field<Real> * sigma2, Field<Real
 
       if ( (*source)(xsigma) < 1.E-300) {(*sigma2)(xsigma)= (*sigma2_past)(xsigma)*rescale*rescale;}
       else {(*sigma2)(xsigma) = ((*Sij)(xsigma, 0, 0) + (*Sij)(xsigma, 1, 1) + (*Sij)(xsigma, 2, 2) )/(*source)(xsigma)
-	  -((*vi)(xsigma,0)*(*vi)(xsigma,0) + (*vi)(xsigma,1)*(*vi)(xsigma,1) + (*vi)(xsigma,2)*(*vi)(xsigma,2));
+      -((*vi)(xsigma,0)*(*vi)(xsigma,0) + (*vi)(xsigma,1)*(*vi)(xsigma,1) + (*vi)(xsigma,2)*(*vi)(xsigma,2));
            }
 
     }
@@ -1020,11 +1020,11 @@ void store_sigma2(Field<Real> * sigma2_past, Field<Real> * sigma2 = NULL)
   if (sigma2 != NULL)
     {
       for(x.first(); x.test(); x.next())
-	{
-	  (*sigma2_past)(x,0) = (*sigma2)(x,0);
-	  (*sigma2_past)(x,1) = (*sigma2)(x,1);
-	  (*sigma2_past)(x,2) = (*sigma2)(x,2);
-	}
+    {
+      (*sigma2_past)(x,0) = (*sigma2)(x,0);
+      (*sigma2_past)(x,1) = (*sigma2)(x,1);
+      (*sigma2_past)(x,2) = (*sigma2)(x,2);
+    }
     }
 }
 
