@@ -695,8 +695,10 @@ bool parseFieldSpecifiers(parameter * & params, const int numparam, const char *
 				pvalue |= MASK_DELTA;
 			else if (strcmp(start, "delta_N") == 0 || strcmp(start, "deltaN") == 0)
 				pvalue |= MASK_DBARE;
-                        else if (strcmp(start, "vort") == 0 || strcmp(start, "wi_field") == 0)
-			        pvalue |= MASK_VORT;
+#ifdef HAVE_VORTICITY
+            else if (strcmp(start, "vort") == 0 || strcmp(start, "wi_field") == 0)
+                pvalue |= MASK_VORT;
+#endif
 
 			params[i].used = true;
 			return true;

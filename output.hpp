@@ -62,14 +62,7 @@ using namespace std;
 #ifdef HAVE_VORTICITY
 void writeSnapshots(metadata & sim, cosmology & cosmo, const double fourpiG, gadget2_header & hdr, const double a, const int snapcount, string h5filename, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_cdm, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_b, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_ncdm, Field<Real> * phi, Field<Real> * chi, Field<Real> * Bi, Field<Real> * source, Field<Real> * Sij, Field<Real> * th, Field<Real> *norm_w, Field<Real> *sigma2, Field<Cplx> * scalarFT, Field<Cplx> * BiFT, Field<Cplx> * SijFT, Field<Cplx> * thFT, Field<Cplx> *norm_wFT, Field<Cplx> *sigma2FT, PlanFFT<Cplx> * plan_phi, PlanFFT<Cplx> * plan_chi, PlanFFT<Cplx> * plan_Bi, PlanFFT<Cplx> * plan_source, PlanFFT<Cplx> * plan_Sij, PlanFFT<Cplx> * plan_th, PlanFFT<Cplx> *plan_norm_w, PlanFFT<Cplx> *plan_sigma2, Field<Real> * Bi_check = NULL, Field<Cplx> * BiFT_check = NULL, PlanFFT<Cplx> * plan_Bi_check = NULL)
 #else
-void writeSnapshots(metadata & sim, cosmology & cosmo, const double fourpiG, gadget2_header & hdr, const
- double a, const int snapcount, string h5filename, Particles_gevolution<part_simple,part_simple_info,part
-_simple_dataType> * pcls_cdm, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * p
-cls_b, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_ncdm, Field<Real> *
- phi, Field<Real> * chi, Field<Real> * Bi, Field<Real> * source, Field<Real> * Sij, Field<Cplx> * scalarF
-T, Field<Cplx> * BiFT, Field<Cplx> * SijFT, PlanFFT<Cplx> * plan_phi, PlanFFT<Cplx> * plan_chi, PlanFFT<C
-plx> * plan_Bi, PlanFFT<Cplx> * plan_source, PlanFFT<Cplx> * plan_Sij, Field<Real> * Bi_check = NULL, Fie
-ld<Cplx> * BiFT_check = NULL, PlanFFT<Cplx> * plan_Bi_check = NULL)
+void writeSnapshots(metadata & sim, cosmology & cosmo, const double fourpiG, gadget2_header & hdr, const double a, const int snapcount, string h5filename, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_cdm, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_b, Particles_gevolution<part_simple,part_simple_info,part_simple_dataType> * pcls_ncdm, Field<Real> * phi, Field<Real> * chi, Field<Real> * Bi, Field<Real> * source, Field<Real> * Sij, Field<Cplx> * scalarFT, Field<Cplx> * BiFT, Field<Cplx> * SijFT, PlanFFT<Cplx> * plan_phi, PlanFFT<Cplx> * plan_chi, PlanFFT<Cplx> * plan_Bi, PlanFFT<Cplx> * plan_source, PlanFFT<Cplx> * plan_Sij, Field<Real> * Bi_check = NULL, Field<Cplx> * BiFT_check = NULL, PlanFFT<Cplx> * plan_Bi_check = NULL)
 #endif
 {
 	char filename[2*PARAM_MAX_LENGTH+24];
@@ -237,24 +230,25 @@ ld<Cplx> * BiFT_check = NULL, PlanFFT<Cplx> * plan_Bi_check = NULL)
 #endif
 
 #ifdef HAVE_VORTICITY
-		if (sim.out_snapshot & MASK_VORT){
+    if (sim.out_snapshot & MASK_VORT){
 
 #ifdef EXTERNAL_IO
-		  th->saveHDF5_server_write(NUMBER_OF_IO_FILES);
-		  norm_w->saveHDF5_server_write(NUMBER_OF_IO_FILES);
-		  sigma2->saveHDF5_server_write(NUMBER_OF_IO_FILES);
+        th->saveHDF5_server_write(NUMBER_OF_IO_FILES);
+		norm_w->saveHDF5_server_write(NUMBER_OF_IO_FILES);
+		sigma2->saveHDF5_server_write(NUMBER_OF_IO_FILES);
 #else
-		  if (sim.downgrade_factor > 1){
-			th->saveHDF5_coarseGrain3D(h5filename + filename + "_th.h5", sim.downgrade_factor);
-			norm_w->saveHDF5_coarseGrain3D(h5filename + filename + "_w.h5", sim.downgrade_factor);
-			sigma2->saveHDF5_coarseGrain3D(h5filename + filename + "_sigma2.h5", sim.downgrade_factor);
-		  }
-		  else{
-		  th->saveHDF5(h5filename + filename + "_th.h5");
-		  norm_w->saveHDF5(h5filename + filename + "_w.h5");
-		  sigma2->saveHDF5(h5filename + filename + "_sigma2.h5");}
+        if (sim.downgrade_factor > 1){
+            th->saveHDF5_coarseGrain3D(h5filename + filename + "_th.h5", sim.downgrade_factor);
+            norm_w->saveHDF5_coarseGrain3D(h5filename + filename + "_w.h5", sim.downgrade_factor);
+            sigma2->saveHDF5_coarseGrain3D(h5filename + filename + "_sigma2.h5", sim.downgrade_factor);
+        }
+        else{
+              th->saveHDF5(h5filename + filename + "_th.h5");
+              norm_w->saveHDF5(h5filename + filename + "_w.h5");
+              sigma2->saveHDF5(h5filename + filename + "_sigma2.h5");
+        }
 #endif
-		}
+    }
 #endif
 	if (sim.out_snapshot & MASK_HIJ)
 	{
@@ -795,11 +789,11 @@ void writeSpectra(metadata & sim, cosmology & cosmo, const double fourpiG, const
 		writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, a * a * a * a * sim.numpts * sim.numpts * 2. * M_PI * M_PI, filename, "power spectrum of B", a);
 #endif
 
-	}
+    }
 #ifdef HAVE_VORTICITY
 	if (sim.out_pk & MASK_VORT)
-		  {
-                    extractPowerSpectrum(*viFT, kbin, power, kscatter, pscatter, occupation, sim.numbins, false, KTYPE_LINEAR);
+    {
+            extractPowerSpectrum(*viFT, kbin, power, kscatter, pscatter, occupation, sim.numbins, false, KTYPE_LINEAR);
 		    sprintf(filename, "%s%s%03d_vi.dat", sim.output_path, sim.basename_pk, pkcount);
 		    writePowerSpectrum(kbin, power, kscatter, pscatter, occupation, sim.numbins, sim.boxsize, (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI, filename, "power spectrum of vi", a);
                     extractPowerSpectrum(*vRFT, kbin, power, kscatter, pscatter, occupation, sim.numbins, false, KTYPE_LINEAR);
@@ -838,8 +832,8 @@ void writeSpectra(metadata & sim, cosmology & cosmo, const double fourpiG, const
                                        sim.boxsize * (Real) numpts3d * (Real) numpts3d * 2. * M_PI * M_PI,
 				       filename, "cross spectrum of delta-theta", a
 				       );
-#endif
 	}
+#endif
 
 	free(kbin);
 	free(power);

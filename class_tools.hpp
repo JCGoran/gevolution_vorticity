@@ -1,7 +1,7 @@
 //////////////////////////
 // class_tools.hpp
 //////////////////////////
-// 
+//
 // interface to linear Boltzmann code CLASS
 //
 // Author: Julian Adamek (Université de Genève & Observatoire de Paris)
@@ -25,7 +25,7 @@ using namespace LATfield2;
 //////////////////////////
 // Description:
 //   initializes CLASS structures containing interpolation tables for various transfer functions
-// 
+//
 // Arguments:
 //   sim               simulation metadata structure
 //   ic                settings for IC generation
@@ -36,7 +36,7 @@ using namespace LATfield2;
 //   output_value      CLASS parameter value specifying the output (optional)
 //
 // Returns:
-// 
+//
 //////////////////////////
 
 void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosmo, background & class_background, perturbs & class_perturbs, spectra & class_spectra, const char * output_value = "dTk, vTk")
@@ -67,7 +67,7 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 
 	for (i = 0; i < num_entries; i++)
 		class_filecontent.read[i] = _FALSE_;
-		
+
 	i = 0;
 
 	sprintf(class_filecontent.name[i], "root");
@@ -279,14 +279,14 @@ void initializeCLASSstructures(metadata & sim, icsettings & ic, cosmology & cosm
 //////////////////////////
 // Description:
 //   frees CLASS structures containing interpolation tables for various transfer functions
-// 
+//
 // Arguments:
 //   class_background  CLASS structure that contains the background
 //   class_perturbs    CLASS structure that contains perturbations
 //   class_spectra     CLASS structure that contains spectra
 //
 // Returns:
-// 
+//
 //////////////////////////
 
 void freeCLASSstructures(background & class_background, perturbs & class_perturbs, spectra & class_spectra)
@@ -316,7 +316,7 @@ void freeCLASSstructures(background & class_background, perturbs & class_perturb
 //////////////////////////
 // Description:
 //   loads a set of tabulated transfer functions from some precomputed CLASS structures
-// 
+//
 // Arguments:
 //   class_background  CLASS structure that contains the background
 //   class_perturbs    CLASS structure that contains the perturbations
@@ -332,7 +332,7 @@ void freeCLASSstructures(background & class_background, perturbs & class_perturb
 //   h                 conversion factor between 1/Mpc and h/Mpc (theta is in units of 1/Mpc)
 //
 // Returns:
-// 
+//
 //////////////////////////
 
 void loadTransferFunctions(background & class_background, perturbs & class_perturbs, spectra & class_spectra, gsl_spline * & tk_delta, gsl_spline * & tk_theta, const char * qname, const double boxsize, const double z, double h)
@@ -402,13 +402,13 @@ void loadTransferFunctions(background & class_background, perturbs & class_pertu
 	}
 
 	free(data);
-	
+
 	tk_delta = gsl_spline_alloc(gsl_interp_cspline, class_spectra.ln_k_size);
 	tk_theta = gsl_spline_alloc(gsl_interp_cspline, class_spectra.ln_k_size);
-	
+
 	gsl_spline_init(tk_delta, k, tk_d, class_spectra.ln_k_size);
 	gsl_spline_init(tk_theta, k, tk_t, class_spectra.ln_k_size);
-	
+
 	free(k);
 	free(tk_d);
 	free(tk_t);

@@ -729,44 +729,6 @@ void projectFTvelocityTh(Field<Cplx> & thFT, Field<Cplx> & viFT)
 }
 
 //////////////////////////
-// compute_vi_zero
-//////////////////////////
-// Description:
-//   Compute the velocity field as v^i = T^i_0/T^0_0, if a = 1 then vi = a v^i
-//   If T^0_0 = 0 the velocity is set to zero (velocity method = zero)
-//
-// Arguments:
-//   viFT       reference to the velocity field
-//   source     reference to the field source (a^3 T^0_0)
-//   Bi         reference to the field Bi (a^4 T^0_i)
-//   phi        reference to the field phi
-//   chi        reference to the field chi
-// Returns:
-//
-//////////////////////////
-
-void compute_vi_zero(Field<Real> * vi, Field<Real> * source = NULL, Field<Real> * Ti0 = NULL)
-{
-
-  Site xvi(vi->lattice());
-
-  for(xvi.first(); xvi.test(); xvi.next())
-    {
-
-
-      if ( (*source)(xvi) < 1.E-300) {(*vi)(xvi,0)= 0.0;}
-      else {(*vi)(xvi,0) = (*Ti0)(xvi,0)/(*source)(xvi);}
-
-      if ( (*source)(xvi) < 1.E-300) {(*vi)(xvi,1)= 0.0;}
-      else {(*vi)(xvi,1) = (*Ti0)(xvi,1)/(*source)(xvi);}
-
-      if ( (*source)(xvi) < 1.E-300) {(*vi)(xvi,2)= 0.0;}
-      else {(*vi)(xvi,2) = (*Ti0)(xvi,2)/(*source)(xvi);}
-
-    }
-}
-
-//////////////////////////
 // compute_vi_past_rescaled
 //////////////////////////
 // Description:
