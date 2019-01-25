@@ -119,7 +119,6 @@ int main(int argc, char **argv)
 #ifdef HAVE_VORTICITY
     Real sigma0;
     Real a_past = 1.;
-    long Nempty;
 #endif
 
 #ifndef H5_DEBUG
@@ -229,28 +228,24 @@ int main(int argc, char **argv)
     Field<Cplx> SijFT;
     Field<Cplx> BiFT;
 #ifdef HAVE_VORTICITY
-    Field<Real> count_part;
-    Field<Real> T00;
     Field<Real> Ti0;
     Field<Real> vi;
     Field<Real> vi_past;
     Field<Real> vR;
     Field<Real> th;
-    Field<Real> norm_vR2;
-    Field<Real> norm_w;
+    Field<Real> norm_vR2; // only for snapshots!
+    Field<Real> norm_w; // only for snapshots!
     Field<Real> sigma2;
     Field<Real> sigma2_past;
     Field<Cplx> sigma2FT;
     Field<Cplx> sigma2_pastFT;
-    Field<Cplx> T00FT;
-    Field<Cplx> count_partFT;
     Field<Cplx> viFT;
     Field<Cplx> vi_pastFT;
     Field<Cplx> Ti0FT;
     Field<Cplx> vRFT;
     Field<Cplx> thFT;
-    Field<Cplx> norm_wFT;
     Field<Cplx> norm_vR2FT;
+    Field<Cplx> norm_wFT;
 #endif
     source.initialize(lat,1);
     phi.initialize(lat,1);
@@ -269,22 +264,16 @@ int main(int argc, char **argv)
     th.initialize(lat,1);
     norm_vR2.initialize(lat,1);
     norm_w.initialize(lat,1);
-    T00.initialize(lat,1);
-    count_part.initialize(lat,1);
     sigma2.initialize(lat, 1);
     sigma2_past.initialize(lat, 1);
-    count_partFT.initialize(latFT,1);
     thFT.initialize(latFT,1);
     norm_wFT.initialize(latFT,1);
     norm_vR2FT.initialize(latFT,1);
-    T00FT.initialize(latFT,1);
     sigma2FT.initialize(latFT,1);
     sigma2_pastFT.initialize(latFT,1);
     PlanFFT<Cplx> plan_th(&th, &thFT);
     PlanFFT<Cplx> plan_norm_w(&norm_w, &norm_wFT);
     PlanFFT<Cplx> plan_norm_vR2(&norm_vR2, &norm_vR2FT);
-    PlanFFT<Cplx> plan_T00(&T00, &T00FT);
-    PlanFFT<Cplx> plan_count(&count_part, &count_partFT);
     PlanFFT<Cplx> plan_sigma2(&sigma2, &sigma2FT);
     PlanFFT<Cplx> plan_sigma2_past(&sigma2_past, &sigma2_pastFT);
     vi.initialize(lat,3);
@@ -495,12 +484,11 @@ int main(int argc, char **argv)
 #ifdef HAVE_VORTICITY
         // Compute velocity field
 
-        projection_init(&Ti0);
-        projection_Ti0_project(&pcls_cdm, &Ti0, a, &phi, &chi);
-        vertexProjectionCIC_comm(&Ti0);
-
-        if (sim.vector_flag == VECTOR_ELLIPTIC && sim.velocity_flag == VEL_PAST_RESCALED)
+        if (sim.vector_flag == VECTOR_ELLIPTIC && ((sim.out_pk & MASK_VORT) || (sim.out_snapshot & MASK_VORT)))
         {
+            projection_init(&Ti0);
+            projection_Ti0_project(&pcls_cdm, &Ti0, a, &phi, &chi);
+            vertexProjectionCIC_comm(&Ti0);
             compute_vi_past_rescaled(cosmo, &vi, &source, a, a_past, &Ti0, &vi_past);
             store_vi(&vi_past, &vi);
         }
@@ -518,7 +506,7 @@ int main(int argc, char **argv)
         projection_Tij_comm(&Sij);
 
 #ifdef HAVE_VORTICITY
-        if (sim.vector_flag == VECTOR_ELLIPTIC)
+        if (sim.vector_flag == VECTOR_ELLIPTIC && ((sim.out_pk & MASK_VORT) || (sim.out_snapshot & MASK_VORT)))
         {
             compute_sigma2_rescaled(cosmo, &sigma2, &source, &Sij, &vi, &sigma2_past, a, a_past);
             store_sigma2(&sigma2_past, &sigma2);
@@ -531,14 +519,8 @@ int main(int argc, char **argv)
         ref_time = MPI_Wtime();
 #endif
 
-#ifdef HAVE_VORTICITY
-        Nempty = 0;
-#endif
         if (sim.gr_flag > 0)
         {
-#ifdef HAVE_VORTICITY
-            compute_count(&pcls_cdm, &Nempty, &count_part);
-#endif
             T00hom = 0.;
             for (x.first(); x.test(); x.next())
                 T00hom += source(x);
@@ -546,6 +528,9 @@ int main(int argc, char **argv)
             T00hom /= (Real) numpts3d;
 
 #ifdef HAVE_VORTICITY
+
+        if (sim.vector_flag == VECTOR_ELLIPTIC && ((sim.out_pk & MASK_VORT) || (sim.out_snapshot & MASK_VORT)))
+        {
             sigma0 = 0.;
             for (x.first(); x.test(); x.next())
             {
@@ -553,15 +538,12 @@ int main(int argc, char **argv)
             }
             parallel.sum<Real>(sigma0);
             sigma0 /= (Real) numpts3d;
+        }
 #endif
 
             if (cycle % CYCLE_INFO_INTERVAL == 0)
             {
-#ifdef HAVE_VORTICITY
-                COUT << " cycle " << cycle << ", background information: z = " << (1./a) - 1. << ", average T00 = " << T00hom << ", AVERAGE sigma_0 = " << sigma0 << ",  N empty cells = " << (Real) Nempty <<" , background model = " << cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo) << endl;
-#else
                 COUT << " cycle " << cycle << ", background information: z = " << (1./a) - 1. << ", average T00 = " << T00hom << ", background model = " << cosmo.Omega_cdm + cosmo.Omega_b + bg_ncdm(a, cosmo) << endl;
-#endif
             }
 
             if (dtau_old > 0.)
@@ -616,31 +598,35 @@ int main(int argc, char **argv)
 
 
 #ifdef HAVE_VORTICITY
-        if (sim.vector_flag == VECTOR_ELLIPTIC && pkcount < sim.num_pk && 1. / a < sim.z_pk[pkcount] + 1.)
-        {
-            plan_vi.execute(FFT_FORWARD); //FFT for the velocity field
-            plan_th.execute(FFT_FORWARD);
-            plan_vR.execute(FFT_FORWARD);
-            plan_sigma2.execute(FFT_FORWARD);
+        if ((sim.out_pk & MASK_VORT) || (sim.out_snapshot & MASK_VORT)){
+            if(
+                sim.vector_flag == VECTOR_ELLIPTIC &&
+                    (
+                    (pkcount < sim.num_pk && 1. / a < sim.z_pk[pkcount] + 1.) ||
+                    (snapcount < sim.num_snapshot && 1. / a < sim.z_snapshot[snapcount] + 1.)
+                    )
+            )
+            {
+                plan_vi.execute(FFT_FORWARD); //FFT for the velocity field
+                plan_th.execute(FFT_FORWARD);
+                plan_vR.execute(FFT_FORWARD);
+                plan_sigma2.execute(FFT_FORWARD);
 
-            projectFTvelocityVR(vRFT, viFT);      // compute the vorticity field
-            projectFTvelocityTh(thFT, viFT);      // compute the div_vi field
+                projectFTvelocityVR(vRFT, viFT);      // compute the vorticity field
+                projectFTvelocityTh(thFT, viFT);      // compute the div_vi field
 
-            plan_vi.execute(FFT_BACKWARD);
-            plan_vR.execute(FFT_BACKWARD);
-            plan_th.execute(FFT_BACKWARD);
-            plan_sigma2.execute(FFT_BACKWARD);
+                plan_vi.execute(FFT_BACKWARD);
+                plan_vR.execute(FFT_BACKWARD);
+                plan_th.execute(FFT_BACKWARD);
+                plan_sigma2.execute(FFT_BACKWARD);
 
-            th.updateHalo();
-            vR.updateHalo();
-            vi.updateHalo();
-            sigma2.updateHalo();
-        }
-                // snapshot output
-        if (snapcount < sim.num_snapshot && 1. / a < sim.z_snapshot[snapcount] + 1.)
-        {
-
-            if (sim.out_snapshot & MASK_VORT)
+                th.updateHalo();
+                vR.updateHalo();
+                vi.updateHalo();
+                sigma2.updateHalo();
+            }
+            // snapshot output
+            if (snapcount < sim.num_snapshot && 1. / a < sim.z_snapshot[snapcount] + 1. && (sim.out_snapshot & MASK_VORT))
             {
                 compute_norm2_vR(&vR, &norm_vR2);
                 norm_vR2.updateHalo();
@@ -661,33 +647,11 @@ int main(int argc, char **argv)
             }
             else
             {
-#ifdef HAVE_VORTICITY
-                if (cycle == 0)
-                {
-                    fprintf(
-                        outfile,
-                        "# background statistics\n# cycle   "
-                        "tau/boxsize    a             "
-                        "conformal H/H0  phi(k=0)       "
-                        "T00(k=0)       sigma_0      N_empty \n"
-                    );
-                }
-                fprintf(outfile, " %6d   %e   %e   %e   %e   %e  %e %10d \n",
-                    cycle,
-                    tau,
-                    a,
-                    Hconf(a, fourpiG, cosmo) / Hconf(1., fourpiG, cosmo),
-                    scalarFT(kFT).real(),
-                    T00hom,
-                    sigma0,
-                Nempty);
-#else
                 if (cycle == 0)
                 {
                     fprintf(outfile, "# background statistics\n# cycle   tau/boxsize    a             conformal H/H0  phi(k=0)       T00(k=0)\n");
                 }
                 fprintf(outfile, " %6d   %e   %e   %e   %e   %e\n", cycle, tau, a, Hconf(a, fourpiG, cosmo) / Hconf(1., fourpiG, cosmo), scalarFT(kFT).real(), T00hom);
-#endif
                 fclose(outfile);
             }
         }
@@ -760,9 +724,9 @@ int main(int argc, char **argv)
         ref_time = MPI_Wtime();
 #endif
 
-               // snapshot output
-               if (snapcount < sim.num_snapshot && 1. / a < sim.z_snapshot[snapcount] + 1.)
-               {
+        // snapshot output
+        if (snapcount < sim.num_snapshot && 1. / a < sim.z_snapshot[snapcount] + 1.)
+        {
             COUT << COLORTEXT_CYAN << " writing snapshot" << COLORTEXT_RESET << " at z = " << ((1./a) - 1.) <<  " (cycle " << cycle << "), tau/boxsize = " << tau << endl;
 
 #ifdef CHECK_B

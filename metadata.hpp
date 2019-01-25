@@ -165,8 +165,7 @@ struct metadata
 	int gr_flag;
 	int vector_flag;
 #ifdef HAVE_VORTICITY
-        int velocity_flag;
-        double sigma;
+    int velocity_flag;
 #endif
 	int radiation_flag;
 	int out_pk;

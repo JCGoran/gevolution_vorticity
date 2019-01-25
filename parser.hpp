@@ -659,7 +659,7 @@ bool parseFieldSpecifiers(parameter * & params, const int numparam, const char *
 					pvalue |= MASK_DBARE;
 #ifdef HAVE_VORTICITY
 				else if (strcmp(item, "vort") == 0 || strcmp(item, "wi_field") == 0)
-				  pvalue |= MASK_VORT;
+				    pvalue |= MASK_VORT;
 #endif
 
 

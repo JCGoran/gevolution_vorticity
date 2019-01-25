@@ -1048,8 +1048,6 @@ void projection_T0i_project(Particles<part,part_info,part_dataType> * pcls, Fiel
 
             for(int i = 0; i < 12; i++) qi[i]=0.0;
 
-            // TODO: find out why this part is commented out!
-            /*
 			if (phi != NULL)
 			{
 				localCubePhi[0] = (*phi)(xT0i);
@@ -1062,7 +1060,6 @@ void projection_T0i_project(Particles<part,part_info,part_dataType> * pcls, Fiel
 				localCubePhi[7] = (*phi)(xT0i+0+1+2);
 			}
 
-	    */
 			for (it = (pcls->field())(xPart).parts.begin(); it != (pcls->field())(xPart).parts.end(); ++it)
 			{
 				for (int i = 0; i < 3; i++)
@@ -1366,26 +1363,26 @@ void projection_Ti0_project(Particles<part, part_info, part_dataType> * pcls, Fi
 
 				q = (Real*)((char*)&(*it)+offset_q);
 
-                                for (int i = 0; i < 3; i++){
-				 w =  q[i];
+                for (int i = 0; i < 3; i++){
+				    w =  q[i];
 
-				//000
-				localCube[8*i] += weightScalarGridDown[0]*weightScalarGridDown[1]*weightScalarGridDown[2]*w*(1.+6*localCubePhi[0]-localCubeChi[0]);
-				//001
-				localCube[8*i+1] += weightScalarGridDown[0]*weightScalarGridDown[1]*weightScalarGridUp[2]*w*(1.+6*localCubePhi[1]-localCubeChi[1]);
-				//010
-				localCube[8*i+2] += weightScalarGridDown[0]*weightScalarGridUp[1]*weightScalarGridDown[2]*w*(1.+6*localCubePhi[2]-localCubeChi[2]);
-				//011
-				localCube[8*i+3] += weightScalarGridDown[0]*weightScalarGridUp[1]*weightScalarGridUp[2]*w*(1.+6*localCubePhi[3]-localCubeChi[3]);
-				//100
-				localCube[8*i+4] += weightScalarGridUp[0]*weightScalarGridDown[1]*weightScalarGridDown[2]*w*(1.+6*localCubePhi[4]-localCubeChi[4]);
-				//101
-				localCube[8*i+5] += weightScalarGridUp[0]*weightScalarGridDown[1]*weightScalarGridUp[2]*w*(1.+6*localCubePhi[5]-localCubeChi[5]);
-				//110
-				localCube[8*i+6] += weightScalarGridUp[0]*weightScalarGridUp[1]*weightScalarGridDown[2]*w*(1.+6*localCubePhi[6]-localCubeChi[6]);
-				//111
-				localCube[8*i+7] += weightScalarGridUp[0]*weightScalarGridUp[1]*weightScalarGridUp[2]*w*(1.+6*localCubePhi[7]-localCubeChi[7]);
-                                }
+                    //000
+                    localCube[8*i] += weightScalarGridDown[0]*weightScalarGridDown[1]*weightScalarGridDown[2]*w*(1.+6*localCubePhi[0]-localCubeChi[0]);
+                    //001
+                    localCube[8*i+1] += weightScalarGridDown[0]*weightScalarGridDown[1]*weightScalarGridUp[2]*w*(1.+6*localCubePhi[1]-localCubeChi[1]);
+                    //010
+                    localCube[8*i+2] += weightScalarGridDown[0]*weightScalarGridUp[1]*weightScalarGridDown[2]*w*(1.+6*localCubePhi[2]-localCubeChi[2]);
+                    //011
+                    localCube[8*i+3] += weightScalarGridDown[0]*weightScalarGridUp[1]*weightScalarGridUp[2]*w*(1.+6*localCubePhi[3]-localCubeChi[3]);
+                    //100
+                    localCube[8*i+4] += weightScalarGridUp[0]*weightScalarGridDown[1]*weightScalarGridDown[2]*w*(1.+6*localCubePhi[4]-localCubeChi[4]);
+                    //101
+                    localCube[8*i+5] += weightScalarGridUp[0]*weightScalarGridDown[1]*weightScalarGridUp[2]*w*(1.+6*localCubePhi[5]-localCubeChi[5]);
+                    //110
+                    localCube[8*i+6] += weightScalarGridUp[0]*weightScalarGridUp[1]*weightScalarGridDown[2]*w*(1.+6*localCubePhi[6]-localCubeChi[6]);
+                    //111
+                    localCube[8*i+7] += weightScalarGridUp[0]*weightScalarGridUp[1]*weightScalarGridUp[2]*w*(1.+6*localCubePhi[7]-localCubeChi[7]);
+                }
 			}
 			for (int i = 0; i < 3; i++)
             {
