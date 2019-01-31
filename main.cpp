@@ -183,7 +183,7 @@ int main(int argc, char **argv)
     usedparams = parseMetadata(params, numparam, sim, cosmo, ic);
 
 #ifdef HAVE_VORTICITY
-        parseOutputPath(sim.output_path);
+    parseOutputPath(sim.output_path);
 #endif
 
     COUT << " parsing of settings file completed. " << numparam << " parameters found, " << usedparams << " were used." << endl;
